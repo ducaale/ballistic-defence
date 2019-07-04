@@ -57,7 +57,9 @@ impl MainState {
                 }
             }
         }
+    }
 
+    fn explode_dead_missiles(&mut self) {
         for missile in self.missiles.iter() {
             if !missile.is_alive {
                 missile.explode(&mut self.explosions)
@@ -76,19 +78,12 @@ impl event::EventHandler for MainState {
         const DESIRED_FPS: u32 = 60;
         while timer::check_update_time(ctx, DESIRED_FPS) {
             let elapsed = 1.0 / (DESIRED_FPS as f32);
-            for missile in self.missiles.iter_mut() {
-                if missile.is_alive {
-                    missile.update(elapsed, &mut self.explosions);
-                }
-            }
 
-            for explosion in self.explosions.iter_mut() {
-                if explosion.is_alive {
-                    explosion.update(elapsed);
-                }
-            }
+            self.missiles.iter_mut().for_each(|missile| missile.update(elapsed));
+            self.explosions.iter_mut().for_each(|explosion| explosion.update(elapsed));
 
             self.handle_collisions();
+            self.explode_dead_missiles();
             self.remove_dead_entites();
 
             if self.frames % 100 == 0 {

@@ -22,14 +22,13 @@ impl Missile {
         Missile { speed, position, origin, target, is_invincible, is_alive: true }
     }
 
-    pub fn update(&mut self, elapsed: f32, explosions: &mut Vec<Explosion>) {
+    pub fn update(&mut self, elapsed: f32) {
         let direction = (self.target - self.origin).normalize();
         self.position += direction * self.speed * elapsed;
 
         let distance_to_target = (self.target - self.position).magnitude();
         if distance_to_target < 5.0 {
             self.is_alive = false;
-            self.explode(explosions);
         }
     }
 
