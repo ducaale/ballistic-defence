@@ -26,10 +26,14 @@ impl Missile {
         let direction = (self.target - self.origin).normalize();
         self.position += direction * self.speed * elapsed;
 
-        let distance_to_target = (self.target - self.position).magnitude();
-        if distance_to_target < 5.0 {
+        if self.did_hit_target() {
             self.is_alive = false;
         }
+    }
+
+    pub fn did_hit_target(&self) -> bool {
+        let distance_to_target = (self.target - self.position).magnitude();
+        distance_to_target < 5.0
     }
 
     pub fn explode(&self, explosions: &mut Vec<Explosion>) {

@@ -22,6 +22,8 @@ struct MainState {
     cursor: Point2<f32>,
     missiles: Vec<Missile>,
     explosions: Vec<Explosion>,
+    missiles_intercepted: u32,
+    missiles_missed: u32
 }
 
 impl MainState {
@@ -32,17 +34,35 @@ impl MainState {
             cursor: Point2::new(0.0, 0.0),
             missiles: vec![],
             explosions: vec![],
+            missiles_intercepted: 0,
+            missiles_missed: 0
         };
         Ok(s)
     }
 
-    fn draw_cursor(&self, ctx: &mut Context, position: Point2<f32>) -> GameResult {
+    fn draw_cursor(&self, ctx: &mut Context) -> GameResult {
         ggez::input::mouse::set_cursor_hidden(ctx, true);
         let image = &self.assets.cursor_image;
         let drawparams = graphics::DrawParam::new()
-            .dest(position)
+            .dest(self.cursor)
             .offset(Point2::new(0.5, 0.5));
         graphics::draw(ctx, image, drawparams)?;
+
+        Ok(())
+    }
+
+    fn draw_score(&self, ctx: &mut Context) -> GameResult {
+        let intercepted_dest = Point2::new(10.0, 10.0);
+        let missed_dest = Point2::new(600.0, 10.0);
+
+        let intercepted_str = format!("INTERCEPTED: {}", self.missiles_intercepted);
+        let missed_str = format!("MISSED: {}", self.missiles_missed);
+
+        let intercepted_display = graphics::Text::new((intercepted_str, self.assets.font, 32.0));
+        let missed_display = graphics::Text::new((missed_str, self.assets.font, 32.0));
+
+        graphics::draw(ctx, &intercepted_display, (intercepted_dest, 0.0, graphics::WHITE))?;
+        graphics::draw(ctx, &missed_display, (missed_dest, 0.0, graphics::WHITE))?;
 
         Ok(())
     }
@@ -67,6 +87,19 @@ impl MainState {
         }
     }
 
+    fn update_score(&mut self) {
+        for missile in self.missiles.iter() {
+            if !missile.is_alive && !missile.is_invincible {
+                if missile.did_hit_target() {
+                    self.missiles_missed += 1;
+                }
+                else {
+                    self.missiles_intercepted += 1;
+                }
+            }
+        }
+    }
+
     fn remove_dead_entites(&mut self) {
         self.missiles.retain(|missile| missile.is_alive);
         self.explosions.retain(|explosion| explosion.is_alive);
@@ -84,6 +117,7 @@ impl event::EventHandler for MainState {
 
             self.handle_collisions();
             self.explode_dead_missiles();
+            self.update_score();
             self.remove_dead_entites();
 
             if self.frames % 100 == 0 {
@@ -105,16 +139,15 @@ impl event::EventHandler for MainState {
         graphics::clear(ctx, [0.0, 0.0, 0.0, 1.0].into());
 
         for missile in self.missiles.iter() {
-            if missile.is_alive {
-                missile.draw(ctx)?;
-            }
+            missile.draw(ctx)?;
         }
         for explosion in self.explosions.iter() {
-            if explosion.is_alive && (self.frames % 4) != 0 {
+            if (self.frames % 4) != 0 {
                 explosion.draw(ctx)?;
             }
         }
-        self.draw_cursor(ctx, self.cursor)?;
+        self.draw_cursor(ctx)?;
+        self.draw_score(ctx)?;
         graphics::present(ctx)?;
 
         self.frames += 1;
