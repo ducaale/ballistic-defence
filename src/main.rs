@@ -192,8 +192,6 @@ fn main() -> GameResult {
         .add_resource_path(resource_dir)
         .build()?;
 
-    println!("HIDPI: {}", graphics::hidpi_factor(ctx));
-
     let state = &mut MainState::new(ctx)?;
     event::run(ctx, event_loop, state)
 }
